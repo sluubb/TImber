@@ -23,10 +23,10 @@
 #define MAX_SECTORS (6)
 
 // map inputs for computer with keyboard instead of for calculator
-#define KEYBOARD_MAPPING
+#define WASD_MAPPING
 
 // input mappings
-#ifdef KEYBOARD_MAPPING
+#ifdef WASD_MAPPING
 #define KEY_LOOK_LEFT (kb_KeyLeft)
 #define KEY_LOOK_RIGHT (kb_KeyRight)
 #define KEY_MOVE_FORWARD (kb_KeySub)
@@ -46,19 +46,7 @@
 
 #define WALL_HEIGHT (100)
 
-/*
-#define MINIMAP_CENTER_X (40)
-#define MINIMAP_CENTER_Y (40)
-#define MINIMAP_ZOOM (20)
-#define MINIMAP_COLOR (31)
-*/
-
 char * uint24_to_str(char * result, uint24_t value);
-
-struct MathCache {
-    float cos[360];
-    float sin[360];
-}; struct MathCache Math;
 
 typedef struct Vector2i {
     int24_t x, y;
@@ -79,6 +67,11 @@ vec2f_t vec2f(float x, float y) {
     v.x = x; v.y = y;
     return v;
 }
+
+struct MathCache {
+    float cos[360];
+    float sin[360];
+}; struct MathCache Math;
 
 struct Player {
     vec2i_t position;
@@ -106,29 +99,29 @@ void lerpi(int24_t * value, int24_t target, int24_t t_num, int24_t t_den) {
     *value += (target - (*value)) * t_num / t_den;
 }
 
-void create_wall(struct Sector * sectors, uint24_t i, vec2i_t corner0, vec2i_t corner1, int24_t portal_target) {
+void create_wall(struct Sector * sector, uint24_t i, vec2i_t corner0, vec2i_t corner1, int24_t portal_target) {
     vec2i_t diff = vec2i(corner1.x - corner0.x, corner1.y - corner0.y);
     int24_t length_sq = diff.x * diff.x + diff.y * diff.y;
 
     if (portal_target >= MAX_SECTORS) portal_target = -1;
 
-    sectors->walls[i].position = corner0;
-    sectors->walls[i].length_sq = length_sq;
-    sectors->walls[i].color = 4 + 2 * (diff.x * abs(diff.x) / length_sq); // TODO: actual color implementation
-    sectors->walls[i].portal_target = portal_target;
+    sector->walls[i].position = corner0;
+    sector->walls[i].length_sq = length_sq;
+    sector->walls[i].color = 4 + 2 * (diff.x * abs(diff.x) / length_sq); // TODO: actual color implementation
+    sector->walls[i].portal_target = portal_target;
 }
 
-void create_sector(struct Sector * sectors, uint8_t num_walls, vec2i_t * corners, int24_t * portal_target) {
-    sectors->num_walls = num_walls;
+void create_sector(struct Sector * sector, uint8_t num_walls, vec2i_t * corners, int24_t * portal_target) {
+    sector->num_walls = num_walls;
     if (num_walls == 0) return;
 
     uint24_t last = num_walls - 1;
 
     for (uint24_t i = 0; i < last; i++) {
-        create_wall(sectors, i, corners[i], corners[i + 1], portal_target[i]);
+        create_wall(sector, i, corners[i], corners[i + 1], portal_target[i]);
     }
 
-    create_wall(sectors, last, corners[last], corners[0], portal_target[last]);
+    create_wall(sector, last, corners[last], corners[0], portal_target[last]);
 }
 
 void init() {
