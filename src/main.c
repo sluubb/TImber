@@ -68,16 +68,16 @@ vec2f_t vec2f(float x, float y) {
     return v;
 }
 
-typedef struct Wall {
+struct Wall {
     vec2i_t corner_a, corner_b;
     int24_t length_sq;
     uint24_t color;
     int24_t portal_target; // portal_target < 0 means it's not a portal
-} wall_t;
+};
 
 struct Sector {
     uint24_t num_walls;
-    wall_t walls[MAX_WALLS];
+    struct Wall walls[MAX_WALLS];
 };
 struct Sector Sectors[MAX_SECTORS];
 uint24_t num_sectors;
