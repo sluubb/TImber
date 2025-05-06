@@ -81,7 +81,7 @@ void init() {
         { 400,  600},
         { 400,  400}
     };
-    const struct Sector *portal_targets1[] = {NULL, NULL, NULL, &Sectors[2]};
+    const struct Sector *portal_targets1[] = {NULL, NULL, NULL, NULL};
     create_sector(&Sectors[1], 4, corners1, portal_targets1);
 
     // init player
