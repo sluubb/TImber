@@ -72,8 +72,7 @@ void init() {
         { 400, -400},
         {-400, -400}
     };
-    const struct Sector *portal_targets0[] = {NULL, &Sectors[1], NULL, NULL, NULL};
-    create_sector(&Sectors[0], 5, corners0, portal_targets0);
+    create_sector(&Sectors[0], 5, corners0);
 
     const vec2i_t corners1[] = {
         { 0  ,  400},
@@ -81,8 +80,11 @@ void init() {
         { 400,  600},
         { 400,  400}
     };
-    const struct Sector *portal_targets1[] = {NULL, NULL, NULL, NULL};
-    create_sector(&Sectors[1], 4, corners1, portal_targets1);
+    create_sector(&Sectors[1], 4, corners1);
+
+    init_portal(&Sectors[0].walls[1], &Sectors[1], 3);
+
+    dbg_sprintf(dbgout, "%d", Sectors[0].walls[1].target_wall_i);
 
     // init player
     Player.position = vec2i(0, 0); Player.rotation = 0; Player.current_sector = &Sectors[0];
@@ -104,7 +106,7 @@ void move() {
 }
 
 void collide_wall(const struct Wall *wall) {
-    if (wall->portal_target == NULL) {
+    if (wall->is_portal == 0) {
         vec2i_t ab = vec2i(wall->corner_b.x - wall->corner_a.x, wall->corner_b.y - wall->corner_a.y);
         vec2i_t ap = vec2i(Player.position.x - wall->corner_a.x, Player.position.y - wall->corner_a.y);
         float t = (float)(ab.x*ap.x + ab.y*ap.y) / (ab.x*ab.x + ab.y*ab.y);
@@ -124,7 +126,7 @@ void collide_wall(const struct Wall *wall) {
     }
 
     if ((wall->corner_a.y - Player.position.y) * (wall->corner_b.x - Player.position.x) + -(wall->corner_a.x - Player.position.x) * (wall->corner_b.y - Player.position.y) < 0) {
-        Player.current_sector = wall->portal_target;
+        Player.current_sector = wall->target_sector;
     }
 }
 

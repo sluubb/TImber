@@ -1,6 +1,12 @@
 #include "map.h"
 
-void create_wall(struct Wall *wall, vec2i_t corner_a, vec2i_t corner_b, const struct Sector *portal_target) {
+void init_portal(struct Wall *wall, const struct Sector *target_sector, uint24_t target_wall_i) {
+    wall->is_portal = 1;
+    wall->target_sector = target_sector;
+    wall->target_wall_i = target_wall_i;
+}
+
+void create_wall(struct Wall *wall, vec2i_t corner_a, vec2i_t corner_b) {
     vec2i_t diff = vec2i(corner_b.x - corner_a.x, corner_b.y - corner_a.y);
     int24_t length_sq = diff.x * diff.x + diff.y * diff.y;
 
@@ -8,18 +14,18 @@ void create_wall(struct Wall *wall, vec2i_t corner_a, vec2i_t corner_b, const st
     wall->corner_b = corner_b;
     wall->length_sq = length_sq;
     wall->color = 4 + 2 * (diff.x * abs(diff.x) / length_sq); // TODO: actual color implementation
-    wall->portal_target = portal_target;
+    wall->is_portal = 0;
 }
 
-void create_sector(struct Sector *sector, uint8_t num_walls, const vec2i_t *corners, const struct Sector **portal_targets) {
+void create_sector(struct Sector *sector, uint8_t num_walls, const vec2i_t *corners) {
     sector->num_walls = num_walls;
     if (num_walls == 0) return;
 
     uint24_t last = num_walls - 1;
 
     for (uint24_t i = 0; i < last; i++) {
-        create_wall(&sector->walls[i], corners[i], corners[i + 1], portal_targets[i]);
+        create_wall(&sector->walls[i], corners[i], corners[i + 1]);
     }
 
-    create_wall(&sector->walls[last], corners[last], corners[0], portal_targets[last]);
+    create_wall(&sector->walls[last], corners[last], corners[0]);
 }

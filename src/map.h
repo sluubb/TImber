@@ -16,7 +16,10 @@ struct Wall {
     vec2i_t corner_a, corner_b;
     int24_t length_sq;
     uint24_t color;
-    const struct Sector *portal_target; // portal_target < 0 means it's not a portal
+
+    int24_t is_portal;
+    const struct Sector *target_sector;
+    uint24_t target_wall_i;
 };
 
 struct Sector {
@@ -24,8 +27,9 @@ struct Sector {
     struct Wall walls[MAX_WALLS];
 };
 
-void create_wall(struct Wall *wall, vec2i_t corner_a, vec2i_t corner_b, const struct Sector *portal_target);
-void create_sector(struct Sector *sector, uint8_t num_walls, const vec2i_t *corners, const struct Sector **portal_targets);
+void create_wall(struct Wall *wall, vec2i_t corner_a, vec2i_t corner_b);
+void init_portal(struct Wall *wall, const struct Sector *target_sector, uint24_t target_wall_i);
+void create_sector(struct Sector *sector, uint8_t num_walls, const vec2i_t *corners);
 
 #ifdef __cplusplus
 }

@@ -19,11 +19,11 @@ void draw_wall(const struct Wall *wall, vec2i_t camera_origin, vec2f_t camera_di
         min_x_screen,
         max_x_screen)) return;
     
-    if (wall->portal_target == NULL) {
+    if (wall->is_portal == 0) {
         gfx_SetColor(wall->color);
         draw_wall_2d(&draw_call);
     } else {
-        draw_sector(wall->portal_target, camera_origin, camera_direction, draw_call.x0, draw_call.x1);
+        draw_sector(wall->target_sector, camera_origin, camera_direction, draw_call.x0, draw_call.x1);
     }
 
     gfx_SetColor(224);
