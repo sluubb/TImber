@@ -22,14 +22,14 @@ extern "C" {
 #include "utils.h"
 
 struct WallDrawCall {
-    int24_t x0, y0;
-    int24_t x1, y1;
+    vec2i_t p0, p1;
 };
 
 void draw_sector(const struct Sector *sector, vec2i_t camera_origin, vec2f_t camera_direction, int24_t min_x_screen, int24_t max_x_screen);
 void draw_wall(const struct Wall *wall, vec2i_t camera_origin, vec2f_t camera_direction, int24_t min_x_screen, int24_t max_x_screen);
 vec2i_t relative_coord(vec2i_t origin, vec2f_t direction, vec2i_t absolute_coord);
-bool project_wall_on_screen(struct WallDrawCall *draw_call, vec2i_t corner_a_relative, vec2i_t corner_b_relative, int24_t min_x_screen, int24_t max_x_screen);
+bool clip_wall(vec2i_t *corner_a_relative, vec2i_t *corner_b_relative, int24_t min_x_screen, int24_t max_x_screen);
+void project(vec2i_t *screen_coord, vec2i_t relative_coord);
 void draw_wall_2d(const struct WallDrawCall *draw_call);
 
 #ifdef __cplusplus

@@ -12,26 +12,24 @@ void draw_wall(const struct Wall *wall, vec2i_t camera_origin, vec2f_t camera_di
     vec2i_t corner_a_relative = relative_coord(camera_origin, camera_direction, wall->corner_a),
             corner_b_relative = relative_coord(camera_origin, camera_direction, wall->corner_b);
     
-    if (!project_wall_on_screen(
-        &draw_call,
-        corner_a_relative,
-        corner_b_relative,
-        min_x_screen,
-        max_x_screen)) return;
+    if (!clip_wall(&corner_a_relative, &corner_b_relative, min_x_screen, max_x_screen)) return;
+
+    project(&draw_call.p0, corner_a_relative);
+    project(&draw_call.p1, corner_b_relative);
     
     if (wall->is_portal == 0) {
         gfx_SetColor(wall->color);
         draw_wall_2d(&draw_call);
     } else {
-        draw_sector(wall->target_sector, camera_origin, camera_direction, draw_call.x0, draw_call.x1);
+        draw_sector(wall->target_sector, camera_origin, camera_direction, draw_call.p0.x, draw_call.p1.x);
     }
 
     gfx_SetColor(224);
-    gfx_FillCircle(draw_call.x0, HALF_SCREEN_HEIGHT + draw_call.y0, 2);
-    gfx_FillCircle(draw_call.x0, HALF_SCREEN_HEIGHT - draw_call.y0, 2);
+    gfx_FillCircle(draw_call.p0.x, HALF_SCREEN_HEIGHT + draw_call.p0.y, 2);
+    gfx_FillCircle(draw_call.p0.x, HALF_SCREEN_HEIGHT - draw_call.p0.y, 2);
     gfx_SetColor(7);
-    gfx_FillCircle(draw_call.x1, HALF_SCREEN_HEIGHT + draw_call.y1, 2);
-    gfx_FillCircle(draw_call.x1, HALF_SCREEN_HEIGHT - draw_call.y1, 2);
+    gfx_FillCircle(draw_call.p1.x, HALF_SCREEN_HEIGHT + draw_call.p1.y, 2);
+    gfx_FillCircle(draw_call.p1.x, HALF_SCREEN_HEIGHT - draw_call.p1.y, 2);
 }
 
 vec2i_t relative_coord(vec2i_t origin, vec2f_t direction, vec2i_t absolute_coord) {
@@ -59,69 +57,75 @@ bool intersect_points_line(vec2i_t *intersect, const vec2i_t point_a, const vec2
     return y_intersect >= 0 && ((point_b.x >= x_intersect && x_intersect >= point_a.x) || (point_b.x <= x_intersect && x_intersect <= point_a.x));
 }
 
-bool project_wall_on_screen(struct WallDrawCall *draw_call, vec2i_t corner_a_relative, vec2i_t corner_b_relative, const int24_t min_x_screen, const int24_t max_x_screen) {
-    if (corner_a_relative.y < 0 && corner_b_relative.y < 0) {
+bool clip_wall(vec2i_t *corner_a_relative, vec2i_t *corner_b_relative, int24_t min_x_screen, int24_t max_x_screen) {
+    vec2i_t corner_a_relative_clipped = *corner_a_relative;
+    vec2i_t corner_b_relative_clipped = *corner_b_relative;
+
+    if (corner_a_relative_clipped.y < 0 && corner_b_relative_clipped.y < 0) {
         return false;
     }
 
     const int24_t min_x_perspective = min_x_screen - HALF_SCREEN_WIDTH,
                   max_x_perspective = max_x_screen - HALF_SCREEN_WIDTH;
     
-    const bool a_over_max = PERSPECTIVE_SCALE*corner_a_relative.x > max_x_perspective*corner_a_relative.y,
-               a_under_min = PERSPECTIVE_SCALE*corner_a_relative.x < min_x_perspective*corner_a_relative.y,
-               b_over_max = PERSPECTIVE_SCALE*corner_b_relative.x > max_x_perspective*corner_b_relative.y,
-               b_under_min = PERSPECTIVE_SCALE*corner_b_relative.x < min_x_perspective*corner_b_relative.y;
+    const bool a_over_max = PERSPECTIVE_SCALE*corner_a_relative_clipped.x > max_x_perspective*corner_a_relative_clipped.y,
+               a_under_min = PERSPECTIVE_SCALE*corner_a_relative_clipped.x < min_x_perspective*corner_a_relative_clipped.y,
+               b_over_max = PERSPECTIVE_SCALE*corner_b_relative_clipped.x > max_x_perspective*corner_b_relative_clipped.y,
+               b_under_min = PERSPECTIVE_SCALE*corner_b_relative_clipped.x < min_x_perspective*corner_b_relative_clipped.y;
 
     if ((a_over_max && b_over_max) || (b_under_min && a_under_min)) {
         return false;
     }
 
     vec2i_t min_intersect, max_intersect;
-    bool has_min_intersect = intersect_points_line(&min_intersect, corner_a_relative, corner_b_relative, PERSPECTIVE_SCALE, min_x_perspective);
-    bool has_max_intersect = intersect_points_line(&max_intersect, corner_a_relative, corner_b_relative, PERSPECTIVE_SCALE, max_x_perspective);
+    bool has_min_intersect = intersect_points_line(&min_intersect, corner_a_relative_clipped, corner_b_relative_clipped, PERSPECTIVE_SCALE, min_x_perspective);
+    bool has_max_intersect = intersect_points_line(&max_intersect, corner_a_relative_clipped, corner_b_relative_clipped, PERSPECTIVE_SCALE, max_x_perspective);
 
     if (has_min_intersect && has_max_intersect) {
-        if (corner_a_relative.x*abs(corner_b_relative.y) > corner_b_relative.x*abs(corner_a_relative.y)) {
-            corner_a_relative = max_intersect;
-            corner_b_relative = min_intersect;
+        if (corner_a_relative_clipped.x*abs(corner_b_relative_clipped.y) > corner_b_relative_clipped.x*abs(corner_a_relative_clipped.y)) {
+            corner_a_relative_clipped = max_intersect;
+            corner_b_relative_clipped = min_intersect;
         } else {
-            corner_a_relative = min_intersect;
-            corner_b_relative = max_intersect;
+            corner_a_relative_clipped = min_intersect;
+            corner_b_relative_clipped = max_intersect;
         }
     } else if (has_min_intersect) {
         if (a_over_max || a_under_min) {
-            corner_a_relative = min_intersect;
+            corner_a_relative_clipped = min_intersect;
         } else {
-            corner_b_relative = min_intersect;
+            corner_b_relative_clipped = min_intersect;
         }
     } else if (has_max_intersect) {
         if (a_over_max || a_under_min) {
-            corner_a_relative = max_intersect;
+            corner_a_relative_clipped = max_intersect;
         } else {
-            corner_b_relative = max_intersect;
+            corner_b_relative_clipped = max_intersect;
         }
     } else if (a_over_max || a_under_min || b_over_max || b_under_min) {
         return false;
     }
 
-    if (corner_a_relative.x*corner_b_relative.y > corner_b_relative.x*corner_a_relative.y) {
+    if (corner_a_relative_clipped.x*corner_b_relative_clipped.y > corner_b_relative_clipped.x*corner_a_relative_clipped.y) {
         return false;
     }
 
-    draw_call->x0 = corner_a_relative.x * PERSPECTIVE_SCALE / corner_a_relative.y + HALF_SCREEN_WIDTH;
-    draw_call->y0 = WALL_HEIGHT * PERSPECTIVE_SCALE / corner_a_relative.y;
-    draw_call->x1 = corner_b_relative.x * PERSPECTIVE_SCALE / corner_b_relative.y + HALF_SCREEN_WIDTH;
-    draw_call->y1 = WALL_HEIGHT * PERSPECTIVE_SCALE / corner_b_relative.y;
+    *corner_a_relative = corner_a_relative_clipped;
+    *corner_b_relative = corner_b_relative_clipped;
 
     return true;
 }
 
+void project(vec2i_t *screen_coord, vec2i_t relative_coord) {
+    screen_coord->x = relative_coord.x * PERSPECTIVE_SCALE / relative_coord.y + HALF_SCREEN_WIDTH;
+    screen_coord->y = WALL_HEIGHT * PERSPECTIVE_SCALE / relative_coord.y;
+}
+
 // draws a paralellogram mirrored on the screen y axis
 void draw_wall_2d(const struct WallDrawCall *draw_call) {
-    int24_t x0 = draw_call->x0,
-            y0 = draw_call->y0,
-            x1 = draw_call->x1,
-            y1 = draw_call->y1;
+    int24_t x0 = draw_call->p0.x,
+            y0 = draw_call->p0.y,
+            x1 = draw_call->p1.x,
+            y1 = draw_call->p1.y;
 
     // if all parts of the shape are higher than the screen height, just draw a rect
     if (y0 > HALF_SCREEN_HEIGHT && y1 > HALF_SCREEN_HEIGHT) {
