@@ -7,8 +7,8 @@ void draw_sector(const struct Sector *sector, vec2i_t camera_orig, vec2f_t camer
 }
 
 void draw_wall(const struct Wall *wall, vec2i_t camera_orig, vec2f_t camera_dir, int24_t min_x_screen, int24_t max_x_screen) {
-    vec2i_t edge_a_rel = relative_coord(camera_orig, camera_dir, wall->corner_a),
-            edge_b_rel = relative_coord(camera_orig, camera_dir, wall->corner_b);
+    vec2i_t edge_a_rel = relative_coord(camera_orig, camera_dir, wall->edge_a),
+            edge_b_rel = relative_coord(camera_orig, camera_dir, wall->edge_b);
     
     if (!clip_wall(&edge_a_rel, &edge_b_rel, min_x_screen, max_x_screen)) return;
 

@@ -107,11 +107,11 @@ void move() {
 
 void collide_wall(const struct Wall *wall) {
     if (wall->is_portal == 0) {
-        vec2i_t ab = vec2i(wall->corner_b.x - wall->corner_a.x, wall->corner_b.y - wall->corner_a.y);
-        vec2i_t ap = vec2i(Player.position.x - wall->corner_a.x, Player.position.y - wall->corner_a.y);
+        vec2i_t ab = vec2i(wall->edge_b.x - wall->edge_a.x, wall->edge_b.y - wall->edge_a.y);
+        vec2i_t ap = vec2i(Player.position.x - wall->edge_a.x, Player.position.y - wall->edge_a.y);
         float t = (float)(ab.x*ap.x + ab.y*ap.y) / (ab.x*ab.x + ab.y*ab.y);
         if (t > 1.) t = 1.; if (t < 0.) t = 0.;
-        vec2i_t q = vec2i(wall->corner_a.x + ab.x * t, wall->corner_a.y + ab.y * t); // closest point on wall
+        vec2i_t q = vec2i(wall->edge_a.x + ab.x * t, wall->edge_a.y + ab.y * t); // closest point on wall
 
         vec2i_t pq = vec2i(q.x - Player.position.x, q.y - Player.position.y);
         int24_t dist_sq = pq.x*pq.x + pq.y*pq.y;
@@ -125,7 +125,7 @@ void collide_wall(const struct Wall *wall) {
         return;
     }
 
-    if ((wall->corner_a.y - Player.position.y) * (wall->corner_b.x - Player.position.x) + -(wall->corner_a.x - Player.position.x) * (wall->corner_b.y - Player.position.y) < 0) {
+    if ((wall->edge_a.y - Player.position.y) * (wall->edge_b.x - Player.position.x) + -(wall->edge_a.x - Player.position.x) * (wall->edge_b.y - Player.position.y) < 0) {
         Player.current_sector = wall->target_sector;
     }
 }
